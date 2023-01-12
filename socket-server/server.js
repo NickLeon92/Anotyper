@@ -56,8 +56,11 @@ io.on("connection", (socket) => {
     let chatRoom
 
     const findMatch = (data, socket) => {
+
       return findAnyMatch(data, socket)
      //return findDistanceMatch(data, socket)
+
+
       function findDistanceMatch(data, socket){
         let totalDistance = 0 
         const xDistance = data.latitude - socketPair.socketA.latitude
@@ -74,28 +77,38 @@ io.on("connection", (socket) => {
         if(totalDistance < 3){
           socket.join(socketPair.socketA.room)
           io.to(socketPair.socketA.room).emit("chat_room_id",  socketPair.socketA.room)
+          const userPayload = {}
+          userPayload[socketPair.socketA.userId] = socketPair.socketA.username
+          userPayload[data.userId] = data.username
+          io.to(socketPair.socketA.room).emit("connected_users", userPayload)
           return {
             socketId: socket.id,
             userId: data.userId,
             latitude: data.latitude,
             longitude: data.longitude,
-            room: socketPair.socketA.room
-            // socketData: socket
+            room: socketPair.socketA.room,
+            username: data.username
           }
         }
         else{
           return {}
         }
       }
+      
       function findAnyMatch(data, socket){
         socket.join(socketPair.socketA.room)
         io.to(socketPair.socketA.room).emit("chat_room_id",  socketPair.socketA.room)
+        const userPayload = {}
+        userPayload[socketPair.socketA.userId] = socketPair.socketA.username
+        userPayload[data.userId] = data.username
+        io.to(socketPair.socketA.room).emit("connected_users", userPayload)
         return {
           socketId: socket.id,
           userId: data.userId,
           latitude: data.latitude,
           longitude: data.longitude,
-          room: socketPair.socketA.room
+          room: socketPair.socketA.room,
+          username: data.username
         }
       }
     }
@@ -114,13 +127,17 @@ io.on("connection", (socket) => {
 
         socket.join(roomID)
         io.to(roomID).emit("chat_room_id", roomID)
+        const userPayload = {}
+        userPayload[data.userId] = data.username
+        io.to(roomID).emit("connected_users", userPayload)
         
         socketPair.socketA = {
           socketId: socket.id,
           userId: data.userId,
           latitude: data.latitude,
           longitude: data.longitude,
-          room: roomID
+          room: roomID,
+          username: data.username
         }
       }
       else{

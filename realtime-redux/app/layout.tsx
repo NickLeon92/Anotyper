@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-head-element */
 // 'use client'
 import "bootstrap/dist/css/bootstrap.min.css";
+import '../styles/globals.css'
 import {Button} from 'react-bootstrap'
 import axios from 'axios'
 export default async function RootLayout({children}: {children: React.ReactNode}) {
@@ -26,7 +27,12 @@ export default async function RootLayout({children}: {children: React.ReactNode}
 
   return (
     <html>
-      <head></head>
+      <head>
+      <meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1"
+/>
+      </head>
       <body>
        
 

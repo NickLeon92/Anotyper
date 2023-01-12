@@ -2,12 +2,13 @@
 
 import test from "node:test";
 import React, { useEffect, useState } from "react";
-import {Form, InputGroup, FormControl, Button, Container} from 'react-bootstrap'
+import {Form, InputGroup, FormControl, Button, Container, FormLabel} from 'react-bootstrap'
 
 import { io } from "socket.io-client";
 
 
 
+//const socket = io("http://localhost:3001")
 const socket = io("https://redux-socket-server.fly.dev/")
 
 import { v4 as uuidv4 } from 'uuid';
@@ -27,6 +28,11 @@ function Home(){
     const [locationData, setLocationData] = useState({})
 
     const [ready, setReady] = useState(false)
+    const [connectedUser, setConnectedUser] = useState('no user connected')
+    const [foundUser, setFoundUser] = useState(false)
+    const [username, setUsername] = useState(id)
+    const [message, setMessage] = useState('')
+    const [inbox, setInbox] = useState('')
 
     //callback for success/err functions for geolocation attempt (done automatically)
     const success = (data: { coords: { latitude: any; longitude: any; }; }) => {
@@ -34,22 +40,18 @@ function Home(){
         console.log("location data:")
         console.log(data.coords)
         
-        testRoomId = { latitude: data.coords.latitude, longitude: data.coords.longitude, userId: id }
+        // testRoomId = { latitude: data.coords.latitude, longitude: data.coords.longitude, userId: id, username: username }
         setReady(true)
         
         //set location data for back-end matchmaker
-        setLocationData({ latitude: data.coords.latitude, longitude: data.coords.longitude, userId: id })
+        setLocationData({ latitude: data.coords.latitude, longitude: data.coords.longitude, userId: id})
 
     }
     const error = (error: any) => {
         console.log(error)
+        window.alert(error)
     }
 
-    //set outgoing message
-    const [message, setMessage] = useState('')
-
-    //socket sensitive inbox recieving message
-    const [inbox, setInbox] = useState('')
 
     //clears outgoing message
     const clearMessage = () => {
@@ -64,8 +66,10 @@ function Home(){
     const findRoom = () => {
         setInbox('')
         setMessage('')
+        setFoundUser(false)
+        const payload = {...locationData, username:username}
         if(ready){
-            socket.emit("join_room", locationData)
+            socket.emit("join_room", payload)
         }
         else{
             window.alert('you need to wait for location data to come back')
@@ -86,6 +90,10 @@ function Home(){
         e.preventDefault()
         setMessage(e.target.value)
         socket.emit("send_message", {message: e.target.value, partner: roomId})
+    }
+    const updateUserName = (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.preventDefault()
+        setUsername(e.target.value)
     }
 
     useEffect(() => {
@@ -112,6 +120,22 @@ function Home(){
             setInbox('')
             socket.emit("leave_room")
             setRoomId('user disconnected')
+            setConnectedUser('no user connected')
+            setFoundUser(false)
+        })
+        socket.on("connected_users",(data) => {
+            console.log(data)
+            setConnectedUser('looking for someone to chat with..')
+            for(let user in data){
+                console.log(`is ${user} equal to ${id}`)
+                if(user !== id){
+                    console.log('WHHYYYYYYYYYY')
+                    setConnectedUser(data[user])
+                }
+            }
+            if(Object.keys(data).length > 1){
+                setFoundUser(true)
+            }
         })
         console.log(inbox)
     },[socket])
@@ -123,10 +147,21 @@ function Home(){
 
     return (
         <div>
-          <Container style={{marginTop:'10px'}}>
-            kill me
+          <Container style={{marginTop:'30px'}}>
+          <InputGroup className="mb-3">
+                <FormLabel>give yourself a more fun username:</FormLabel>
+                <FormControl 
+                    type="text" 
+                    placeholder={id}
+                    onChange={updateUserName}
+                />
+            </InputGroup>
             <p>Room ID: {roomId}</p>
+            <p style={foundUser ?{color: 'green'}:{color:'red'}}>
+                Connected user: {connectedUser}
+            </p>
                 <Button onClick={findRoom}>find random chatter</Button>
+                
                 <InputGroup className="mb-3">
                     <FormControl 
                         type="text" 
