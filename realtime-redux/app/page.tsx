@@ -8,7 +8,7 @@ import { io } from "socket.io-client";
 
 
 
-const socket = io("http://localhost:3001")
+const socket = io("https://redux-socket-server.fly.dev/")
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -26,19 +26,22 @@ function Home(){
     //saved location data
     const [locationData, setLocationData] = useState({})
 
+    const [ready, setReady] = useState(false)
+
     //callback for success/err functions for geolocation attempt (done automatically)
-    const success = (data) => {
+    const success = (data: { coords: { latitude: any; longitude: any; }; }) => {
 
         console.log("location data:")
         console.log(data.coords)
-
+        
         testRoomId = { latitude: data.coords.latitude, longitude: data.coords.longitude, userId: id }
+        setReady(true)
         
         //set location data for back-end matchmaker
         setLocationData({ latitude: data.coords.latitude, longitude: data.coords.longitude, userId: id })
 
     }
-    const error = (error) => {
+    const error = (error: any) => {
         console.log(error)
     }
 
@@ -61,7 +64,7 @@ function Home(){
     const findRoom = () => {
         setInbox('')
         setMessage('')
-        if(locationData !== {}){
+        if(ready){
             socket.emit("join_room", locationData)
         }
         else{
@@ -70,7 +73,7 @@ function Home(){
     }
 
     //enter key event listener to send message
-    const enterKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    const enterKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
         console.log(e.key)
         if(e.key === 'Enter'){
             setMessage('')
@@ -79,7 +82,7 @@ function Home(){
     }
 
     //key typing event listener
-    const updateMessage = (e: ChangeEvent<HTMLInputElement>) => {
+    const updateMessage = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()
         setMessage(e.target.value)
         socket.emit("send_message", {message: e.target.value, partner: roomId})

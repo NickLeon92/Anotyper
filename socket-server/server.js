@@ -2,16 +2,20 @@ const express = require('express')
 const {Server} = require('socket.io')
 const { createServer } = require("http");
 const { v4: uuidv4 } = require('uuid');
+const cors = require('cors');
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 
 
 
 const app = express();
+app.use(cors({
+    origin: '*'
+}));
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000"
+    origin: '*'
   }
 });
 
@@ -30,6 +34,10 @@ const socketPair = {
   socketA: {},
   socketB: {}
 }
+
+app.get('/', (req,res) => {
+  res.send('socket server online')
+})
 
 
 io.on("connection", (socket) => {
