@@ -17,5 +17,7 @@ INSTRUCTIONS:
 
 3. Click "find random chatter" and you will be paired with the next available chatter
 
-Bugs: you probably will encounter accidentally entering chat room with your previous user ID if you simply refresh and join again. Just make sure someone is on the
+Bugs: you probably will encounter accidentally entering chat room with your previous user ID if you simply refresh and join again. Just make sure someone is on the other side waiting maybe lol
+
+HAVE FUN
 
