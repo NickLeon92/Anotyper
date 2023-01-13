@@ -1,11 +1,10 @@
 'use client'
 
-import test from "node:test";
-import React, { useEffect, useState, useRef } from "react";
-import {Form, InputGroup, FormControl, Button, Container, FormLabel, ToastContainer} from 'react-bootstrap'
-import Toast from 'react-bootstrap/Toast';
+import React, { useEffect, useState } from "react";
+import {Form, InputGroup, FormControl, Button, Container, FormLabel} from 'react-bootstrap'
 
 import { io } from "socket.io-client";
+import Link from 'next/link'
 
 
 
@@ -18,24 +17,18 @@ const id = uuidv4()
 console.log('user id: ' + id)
 
 
-function Home(){
-
+function Home({params}:any){
+    
     let testRoomId = {}
 
-    //name of joined room
-    const [roomId, setRoomId] = useState('not joined in a room yet')
-    //saved location data
+    const [roomId, setRoomId] = useState(params.room)
     const [locationData, setLocationData] = useState({})
-
     const [ready, setReady] = useState(false)
     const [connectedUser, setConnectedUser] = useState('no user connected')
     const [foundUser, setFoundUser] = useState(false)
     const [username, setUsername] = useState(id)
     const [message, setMessage] = useState('')
     const [inbox, setInbox] = useState('')
-    const [show, setShow] = useState(false);
-    const nameRef = React.useRef<string>(id)
-    const roomRef = React.useRef<string>(roomId)
 
     //callback for success/err functions for geolocation attempt (done automatically)
     const success = (data: { coords: { latitude: any; longitude: any; }; }) => {
@@ -66,32 +59,8 @@ function Home(){
     }
 
     //function to call back-end matchmaker to find a match
-    const findRoom = () => {
-        socket.emit('leave_rooms')
-        setInbox('')
-        setMessage('')
-        setFoundUser(false)
-        const payload = {...locationData, username:username}
-        if(ready){
-            socket.emit("join_room", payload)
-        }
-        else{
-            window.alert('you need to wait for location data to come back')
-        }
-    }
-    const createPrivateRoom = () => {
-        // window.alert('link copied to clipboard')
-        socket.emit('leave_rooms')
-        setShow(true)
-        setInbox('')
-        setMessage('')
-        setFoundUser(false)
-        setConnectedUser('waitng for user to join..')
-        const privateRoom = uuidv4()
-        roomRef.current = privateRoom
-        navigator.clipboard.writeText('https://realtime-redux-nickleon92.vercel.app/' + privateRoom);
-        setRoomId(privateRoom)
-        socket.emit("create_private_room", {privateRoom,username})
+    const goHome = () => {
+        socket.emit("leave_rooms")
     }
 
     //enter key event listener to send message
@@ -111,13 +80,11 @@ function Home(){
     }
     const updateUserName = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()
-        nameRef.current = e.target.value
         setUsername(e.target.value)
     }
 
     useEffect(() => {
-        console.log(`welcome ${username}`)
-        // console.log('message recieved')
+        console.log('message recieved')
         socket.on("incoming_message", (data) => {
             // findRoom()
             setInbox(data)
@@ -138,7 +105,7 @@ function Home(){
             console.log(data)
             setMessage('')
             setInbox('')
-            socket.emit("leave_rooms")
+            socket.emit("leave_room")
             setRoomId('user disconnected')
             setConnectedUser('no user connected')
             setFoundUser(false)
@@ -149,7 +116,6 @@ function Home(){
             for(let user in data){
                 console.log(`is ${user} equal to ${id}`)
                 if(user !== id){
-                    
                     setConnectedUser(data[user])
                 }
             }
@@ -157,66 +123,48 @@ function Home(){
                 setFoundUser(true)
             }
         })
-        socket.on("invitee_connected", (data) => {
-            let me = nameRef.current
-            let room = roomRef.current
+        socket.on("welcome", (data) => {
             setConnectedUser(data)
             setFoundUser(true)
-            socket.emit("greet_invitee", {username: me, room:room})
         })
-        // console.log(inbox)
+        console.log(inbox)
     },[socket])
     
 
     useEffect(() => {
         navigator.geolocation.getCurrentPosition(success, error)
+        socket.emit("join_private_room", {roomId, username})
     },[])
-
 
     return (
         <div>
           <Container style={{marginTop:'30px'}}>
-        <ToastContainer position={'top-end'}>
-        <Toast onClose={() => setShow(false)} show={show} delay={3000} autohide>
-            <Toast.Header>
-                <img
-                    src="holder.js/20x20?text=%20"
-                    className="rounded me-2"
-                    alt=""
-                />
-                <strong className="me-auto">hi!</strong>
-                <small>link copied to clipboard</small>
-            </Toast.Header>
-            <Toast.Body className={'Primary' && 'text-black'}>send copied link to someone to start live typing!</Toast.Body>
-        </Toast>
-        </ToastContainer>
-            <Form>
+            {/* <Form>
                 <Form.Group className="mb-3" controlId="formBasicEmail">
-                    <Form.Label>your username:</Form.Label>
+                    <Form.Label>Username:</Form.Label>
                     <FormControl 
                         type="text" 
                         placeholder={id}
                         onChange={updateUserName}
                     />
                     <Form.Text className="text-muted">
-                        enter any username :)
+                        Enter any username :)
                     </Form.Text>
                 </Form.Group>
-            </Form>
+            </Form> */}
+            <p>your user ID: {id}</p>
             <p>Room ID: {roomId}</p>
             <p style={foundUser ?{color: 'green'}:{color:'red'}}>
-                connected username: {connectedUser}
+                Connected username: {connectedUser}
             </p>
+            <Link href={`/`}>
+        
                 <Button 
                 style={{marginBottom:'20px'}}
-                onClick={findRoom}
-                >find random chatter
+                onClick={goHome}
+                >leave private room
                 </Button>
-                <Button 
-                style={{marginBottom:'20px'}}
-                onClick={createPrivateRoom}
-                >create private room
-                </Button>
+          </Link>
                 
                 <InputGroup className="mb-3">
                     <FormControl 
@@ -227,7 +175,7 @@ function Home(){
                         onKeyDown={enterKey}
                     />
                 </InputGroup>
-                <Button onClick={clearMessage}>clear textbox (Enter)</Button>
+                <Button onClick={clearMessage}>new message (Enter)</Button>
                 <div className="message-box" style={{marginTop:'10px'}}>
                     <p className="message-header">inbox:</p>
                     <p>{inbox}</p>

@@ -56,9 +56,14 @@ io.on("connection", (socket) => {
     let chatRoom
 
     const findMatch = (data, socket) => {
+      if(socket.id === socketPair.socketA.socketId){
+        return {}
+      }
+      else{
+        return findAnyMatch(data, socket)
+       //return findDistanceMatch(data, socket)
+      }
 
-      return findAnyMatch(data, socket)
-     //return findDistanceMatch(data, socket)
 
 
       function findDistanceMatch(data, socket){
@@ -94,7 +99,7 @@ io.on("connection", (socket) => {
           return {}
         }
       }
-      
+
       function findAnyMatch(data, socket){
         socket.join(socketPair.socketA.room)
         io.to(socketPair.socketA.room).emit("chat_room_id",  socketPair.socketA.room)
@@ -117,7 +122,7 @@ io.on("connection", (socket) => {
     console.log(data)
     if(Object.keys(socketPair.socketB).length === 0){
       console.log('socketB empty')
-      if(Object.keys(socketPair.socketA).length === 0){
+      if(Object.keys(socketPair.socketA).length === 0 || socket.id === socketPair.socketA.socketId){
         console.log('setting socketA val')
 
         const roomID = uuidv4()
@@ -163,7 +168,22 @@ io.on("connection", (socket) => {
 
   })
 
-  socket.on("leave_room", () => {
+  socket.on("create_private_room", (data) => {
+    console.log(`creating private room: ${data.privateRoom} for user: ${data.username}`)
+    socket.join(data.privateRoom)
+  })
+  socket.on("join_private_room", (data) => {
+    console.log(`user: ${data.username} has joined private room: ${data.roomId}`)
+    socket.join(data.roomId)
+    socket.to(data.roomId).emit("invitee_connected", data.username)
+  })
+  socket.on("greet_invitee", (data) => {
+    console.log('greeting invitee')
+    console.log(data)
+    socket.to(data.room).emit("welcome", data.username)
+  })
+
+  socket.on("leave_rooms", () => {
     // socket.leave(room)
     for(let room of socket.rooms){
       if(room !== socket.id){
@@ -190,6 +210,9 @@ io.on("connection", (socket) => {
         socket.to(room).emit("room_destroy", "user disconnected")
         socket.leave(room)
       }
+    }
+    if(socket.id === socketPair.socketA.socketId){
+      socketPair.socketA = {}
     }
   })
 });

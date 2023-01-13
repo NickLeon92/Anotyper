@@ -17,6 +17,14 @@ p {
 * {
   box-sizing: border-box;
 }
+.message-box {
+  display: flex;
+  align-items: center;
+}
+.message-header {
+  padding-right: 10px;
+  color:lightblue;
+}
 
 @media (prefers-color-scheme: dark) {
   html {
