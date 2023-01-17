@@ -4,26 +4,23 @@ import test from "node:test";
 import React, { useEffect, useState, useRef } from "react";
 import {Form, InputGroup, FormControl, Button, Container, FormLabel, ToastContainer} from 'react-bootstrap'
 import Toast from 'react-bootstrap/Toast';
+import Link from 'next/link'
 
 import { io } from "socket.io-client";
 
-
-
 // const socket = io("http://localhost:3001")
-const socket = io("https://redux-socket-server.fly.dev/")
+const socket = io("https://socket-server-v2.fly.dev/")
 
 import { v4 as uuidv4 } from 'uuid';
 
 const id = uuidv4()
 console.log('user id: ' + id)
 
-
 function Home(){
 
-    let testRoomId = {}
-
     //name of joined room
-    const [roomId, setRoomId] = useState('not joined in a room yet')
+    const [roomId, setRoomId] = useState('')
+    const [roomStatus, setRoomStatus] = useState('no room joined')
     //saved location data
     const [locationData, setLocationData] = useState({})
 
@@ -79,6 +76,7 @@ function Home(){
             window.alert('you need to wait for location data to come back')
         }
     }
+    const privateRoom = `PR-${uuidv4()}`
     const createPrivateRoom = () => {
         // window.alert('link copied to clipboard')
         socket.emit('leave_rooms')
@@ -87,11 +85,12 @@ function Home(){
         setMessage('')
         setFoundUser(false)
         setConnectedUser('waitng for user to join..')
-        const privateRoom = uuidv4()
+        const privateRoom = `PR-${uuidv4()}`
         roomRef.current = privateRoom
         navigator.clipboard.writeText('https://realtime-redux-nickleon92.vercel.app/' + privateRoom);
         setRoomId(privateRoom)
-        socket.emit("create_private_room", {privateRoom,username})
+        // socket.emit("create_private_room", {privateRoom,username})
+        location.assign(`/${privateRoom}`)
     }
 
     //enter key event listener to send message
@@ -126,6 +125,7 @@ function Home(){
             console.log("room id from server:")
             console.log(data)
             setRoomId(data)
+            roomRef.current = data
         })
         socket.on("test", (data)=>{
             console.log(data)
@@ -133,13 +133,14 @@ function Home(){
         socket.on("test_message", (data) => {
             setInbox(data)
         })
-        socket.on("room_destroy", (data) => {
+        socket.on("room_destroy", (err) => {
             console.log(locationData)
-            console.log(data)
+            console.log(err)
             setMessage('')
             setInbox('')
             socket.emit("leave_rooms")
-            setRoomId('user disconnected')
+            setRoomId('')
+            setRoomStatus(err)
             setConnectedUser('no user connected')
             setFoundUser(false)
         })
@@ -164,6 +165,10 @@ function Home(){
             setFoundUser(true)
             socket.emit("greet_invitee", {username: me, room:room})
         })
+        socket.on("query_status", () => {
+            console.log('relaying status')
+            socket.emit("ping_status", roomRef.current)
+        })
         // console.log(inbox)
     },[socket])
     
@@ -176,20 +181,6 @@ function Home(){
     return (
         <div>
           <Container style={{marginTop:'30px'}}>
-        <ToastContainer position={'top-end'}>
-        <Toast onClose={() => setShow(false)} show={show} delay={3000} autohide>
-            <Toast.Header>
-                <img
-                    src="holder.js/20x20?text=%20"
-                    className="rounded me-2"
-                    alt=""
-                />
-                <strong className="me-auto">hi!</strong>
-                <small>link copied to clipboard</small>
-            </Toast.Header>
-            <Toast.Body className={'Primary' && 'text-black'}>send copied link to someone to start live typing!</Toast.Body>
-        </Toast>
-        </ToastContainer>
             <Form>
                 <Form.Group className="mb-3" controlId="formBasicEmail">
                     <Form.Label>your username:</Form.Label>
@@ -203,20 +194,24 @@ function Home(){
                     </Form.Text>
                 </Form.Group>
             </Form>
-            <p>Room ID: {roomId}</p>
+            <p>Room ID: {roomId === ''?roomStatus:roomId}</p>
             <p style={foundUser ?{color: 'green'}:{color:'red'}}>
                 connected username: {connectedUser}
             </p>
+            
                 <Button 
                 style={{marginBottom:'20px'}}
                 onClick={findRoom}
                 >find random chatter
                 </Button>
+                <Link href={`/${privateRoom}`}>
                 <Button 
-                style={{marginBottom:'20px'}}
-                onClick={createPrivateRoom}
+                style={{marginBottom:'20px', marginLeft:'20px'}}
+                // onClick={createPrivateRoom}
                 >create private room
                 </Button>
+                </Link>
+            
                 
                 <InputGroup className="mb-3">
                     <FormControl 

@@ -41,10 +41,36 @@ app.get('/', (req,res) => {
 
 
 io.on("connection", (socket) => {
+
   // socket.disconnect()
   // socket.join("chat")
   // socket.to("chat").emit("test", "testinggg")
-  console.log("newly connected socket ID: " + socket.id)
+  // if(socket.rooms.lenghth < 2){
+    
+  // }
+  console.log("connected socket ID: " + socket.id)
+  io.to(socket.id).emit("query_status")
+
+  socket.on("return_status", async ({username, room}) => {
+    console.log(`user's displayed room: ${room}`)
+    console.log(`user's displayed name: ${username}`)
+    if(room !== ''){
+      if(room[0]+room[1] !== 'PR'){
+        console.log(`Connected user no longer available. Disconnecting socket: ${socket.id} from room: ${room}`)
+        io.to(socket.id).emit("room_destroy", "you disconnected there..")
+      }
+      else{
+        console.log(`joining socket: ${socket.id} to room: ${room}`)
+        socket.join(room)
+        socket.to(room).emit("wave", username)
+      }
+    }
+  })
+  
+  socket.on("wave_back", ({username, room}) => {
+    console.log(`forwarding hello from user: ${username}`)
+    socket.to(room).emit("update_username", username)
+  })
 
   socket.on("join_room", (data) => {
     for(let room of socket.rooms){
@@ -168,26 +194,32 @@ io.on("connection", (socket) => {
 
   })
 
-  socket.on("create_private_room", (data) => {
-    console.log(`creating private room: ${data.privateRoom} for user: ${data.username}`)
-    socket.join(data.privateRoom)
-  })
-  socket.on("join_private_room", (data) => {
-    console.log(`user: ${data.username} has joined private room: ${data.roomId}`)
-    socket.join(data.roomId)
-    socket.to(data.roomId).emit("invitee_connected", data.username)
-  })
-  socket.on("greet_invitee", (data) => {
-    console.log('greeting invitee')
-    console.log(data)
-    socket.to(data.room).emit("welcome", data.username)
-  })
+  // socket.on("create_private_room", (data) => {
+  //   console.log(`creating private room: ${data.privateRoom} for user: ${data.username}`)
+  //   socket.join(data.privateRoom)
+  // })
+  // socket.on("join_private_room", (data) => {
+  //   console.log(`user: ${data.username} has joined private room: ${data.roomId}`)
+  //   socket.join(data.roomId)
+  //   socket.to(data.roomId).emit("invitee_connected", data.username)
+  // })
+  // socket.on("greet_invitee", (data) => {
+  //   console.log('greeting invitee')
+  //   console.log(data)
+  //   socket.to(data.room).emit("welcome", data.username)
+  // })
+  
 
   socket.on("leave_rooms", () => {
     // socket.leave(room)
     for(let room of socket.rooms){
       if(room !== socket.id){
-        socket.to(room).emit("room_destroy", "user disconnected")
+        let alert = 'user disconnected'
+        if(room[0]+room[1] === 'PR'){
+          alert = 'no one here right now..'
+        }
+        console.log(`socket: ${socket.id} leaving room: ${room}`)
+        socket.to(room).emit("room_destroy", alert)
         socket.leave(room)
       }
     }
@@ -205,10 +237,16 @@ io.on("connection", (socket) => {
     console.log("disconnected socket ID: " + socket.id)
     console.log(socket.rooms)
     for(let room of socket.rooms){
-      
+      let alert = 'user disconnected'
       if(room !== socket.id){
-        socket.to(room).emit("room_destroy", "user disconnected")
-        socket.leave(room)
+        if(room[0]+room[1] === 'PR'){
+          alert = 'no one here right now..'
+        }
+        socket.to(room).emit("room_destroy", alert)
+        if(room[0]+room[1] !== 'PR'){
+          socket.leave(room)
+        }
+        // io.to(room)
       }
     }
     if(socket.id === socketPair.socketA.socketId){
