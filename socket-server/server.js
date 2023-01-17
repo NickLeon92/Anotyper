@@ -72,6 +72,11 @@ io.on("connection", (socket) => {
     socket.to(room).emit("update_username", username)
   })
 
+  socket.on("new_username", ({room, username}) => {
+    console.log(`relaying new name ${username} to room ${room}`)
+    socket.to(room).emit("update_username", username)
+  })
+
   socket.on("join_room", (data) => {
     for(let room of socket.rooms){
       if(room !== socket.id){

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from "react";
-import {Form, InputGroup, FormControl, Button, Container, FormLabel} from 'react-bootstrap'
+import {Form, InputGroup, FormControl, Button, Container, FormLabel, FormText, Modal} from 'react-bootstrap'
 
 import { io } from "socket.io-client";
 import Link from 'next/link'
@@ -32,7 +32,14 @@ function Home({params}:any){
     const nameRef = React.useRef<string>(id)
     const roomRef = React.useRef<string>(params.room)
     const foundRef = React.useRef<boolean>(false)
+    const htmlRef = React.useRef<HTMLTextAreaElement>(null)
     const [button, setButton] = useState('button')
+    const [button2, setButton2] = useState('button2')
+
+    const [show, setShow] = useState(false);
+
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
 
 
 
@@ -54,6 +61,7 @@ function Home({params}:any){
     const enterKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
         console.log(e.key)
         if(e.key === 'Enter'){
+            e.preventDefault()
             setMessage('')
             socket.emit("send_message", {message: '', partner: roomId})
         }
@@ -68,10 +76,28 @@ function Home({params}:any){
     const updateUserName = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()
         setUsername(e.target.value)
+        nameRef.current = e.target.value
+    }
+    const sendUserName = () => {
+        setButton2('button2 animateb')
+        setTimeout(()=>{
+            setButton2('button2')
+        },2000)
+        socket.emit("new_username", {room:roomRef.current , username:nameRef.current})
     }
 
     const clipboard = () => {
         navigator.clipboard.writeText('https://realtime-redux-nickleon92.vercel.app/' + roomRef.current);
+        try{
+            navigator.share({
+                title:'chat with me!',
+                url: 'https://realtime-redux-nickleon92.vercel.app/' + roomRef.current
+            })
+        }catch(err){
+            console.log(err)
+        }
+
+        
         setButton('button animate')
         setTimeout(()=>{
             setButton('button')
@@ -118,26 +144,78 @@ function Home({params}:any){
         })
         console.log(inbox)
     },[socket])
+    useEffect(() => {
+        htmlRef.current?.scrollIntoView({block:'end'})
+    }, [inbox])
     
 
     return (
         <div>
+            <>
+      <Modal show={show} onHide={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title style={{color:'#708ebc'}}>change my username</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <InputGroup className="mb-3">
+                <FormControl
+                    onChange={updateUserName}
+                    placeholder={id}
+                    aria-label="message"
+                    aria-describedby="basic-addon2"
+                // onKeyDown={enterKey}
+                />
+                <Button
+                className={button2}
+                type='button'
+                    onClick={sendUserName}
+                    variant="outline-secondary" id="button-addon2">
+                        <div className="contentb">
+                            <div className="copy2b">
+                                
+                                <div>
+                                    set username
+                                </div>
+                            </div>
+                            <div className="copiedb">set!</div>
+                        </div>
+                </Button>
+            </InputGroup>
+
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
           <Container style={{marginTop:'30px'}}>
-            {/* <Form>
-                <Form.Group className="mb-3" controlId="formBasicEmail">
-                    <Form.Label>Username:</Form.Label>
-                    <FormControl 
-                        type="text" 
-                        placeholder={id}
-                        onChange={updateUserName}
-                    />
-                    <Form.Text className="text-muted">
-                        Enter any username :)
-                    </Form.Text>
-                </Form.Group>
-            </Form> */}
-            <p>your user ID: {id}</p>
-            <p>Room ID: {roomId}</p>
+            
+               
+            <InputGroup style={{marginBottom:'10px', height:'90px'}}>
+                <InputGroup.Text>inbox</InputGroup.Text>
+                <Form.Control ref={htmlRef} as="textarea" value={inbox} aria-label="With textarea" disabled />
+            </InputGroup>
+            <InputGroup className="mb-3">
+                <FormControl
+                    // onChange={}
+                    style={{height:'90px'}}
+                    as="textarea"
+                    placeholder="Type your message here"
+                    aria-label="message"
+                    aria-describedby="basic-addon2"
+                    value={message}
+                    onChange={updateMessage}
+                    onKeyDown={enterKey}
+                // onKeyDown={enterKey}
+                />
+                <Button
+                    onClick={clearMessage}
+                    variant="outline-secondary" id="button-addon2">
+                    return
+                </Button>
+            </InputGroup>
             <p style={foundUser ?{color: 'green'}:{color:'red'}}>
                 Connected username: {connectedUser}
             </p>
@@ -146,10 +224,13 @@ function Home({params}:any){
 
                     <Button
                         onClick={goHome}
-                    >leave private room
+                    >leave room
                     </Button>
                 </Link>
-                <Button style={{marginLeft:'20px'}} onClick={clipboard} className={button} type="button" id="button" title="Copy link">
+                <Button variant="primary" onClick={handleShow} style={{marginLeft:'10px'}}>
+        me
+      </Button>
+                <Button style={{marginLeft:'10px'}} onClick={clipboard} className={button} type="button" id="button" title="Copy link">
                 <div className="content">
                     <div className="copy">
                         <svg
@@ -167,34 +248,14 @@ function Home({params}:any){
                             />
                         </svg>
                         <div>
-                            copy chatroom link
+                            room link
                         </div>
                     </div>
-                    <div className="copied">Copied!</div>
+                    <div className="copied">copied!</div>
                 </div>
                 </Button>
             </div>
-               
-                
-                <InputGroup className="mb-3">
-                    <FormControl 
-                        type="text" 
-                        placeholder="Enter message" 
-                        value={message}
-                        onChange={updateMessage}
-                        onKeyDown={enterKey}
-                    />
-                </InputGroup>
-                <Button onClick={clearMessage}>new message (Enter)</Button>
-                <div className="message-box" style={{marginTop:'10px'}}>
-                    <p className="message-header">inbox:</p>
-                    <p>{inbox}</p>
-                </div>
-                <div className="message-box">
-                    <p className="message-header">sent:</p>
-                    <p>{message}</p>
-                </div>
-
+            {/* <p style={{textAlign:'center'}}>Welcome, {username}</p> */}
           </Container>
             
         </div>
