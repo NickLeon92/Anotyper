@@ -160,7 +160,7 @@ function Home({params}:any){
           <InputGroup className="mb-3">
                 <FormControl
                     onChange={updateUserName}
-                    placeholder={id}
+                    placeholder={nameRef.current}
                     aria-label="message"
                     aria-describedby="basic-addon2"
                 // onKeyDown={enterKey}
@@ -216,9 +216,11 @@ function Home({params}:any){
                     return
                 </Button>
             </InputGroup>
-            <p style={foundUser ?{color: 'green'}:{color:'red'}}>
-                Connected username: {connectedUser}
-            </p>
+            <div className="status" style={foundUser ?{color: 'green'}:{color:'red'}}>
+                {foundUser
+                ?<p>user connected: {connectedUser}</p>
+                :<p>{connectedUser}</p>}
+            </div>
             <div className="button-group">
                 <Link href={`/`}>
 
@@ -228,7 +230,7 @@ function Home({params}:any){
                     </Button>
                 </Link>
                 <Button variant="primary" onClick={handleShow} style={{marginLeft:'10px'}}>
-        me
+        profile
       </Button>
                 <Button style={{marginLeft:'10px'}} onClick={clipboard} className={button} type="button" id="button" title="Copy link">
                 <div className="content">
@@ -248,7 +250,7 @@ function Home({params}:any){
                             />
                         </svg>
                         <div>
-                            room link
+                            invite link
                         </div>
                     </div>
                     <div className="copied">copied!</div>

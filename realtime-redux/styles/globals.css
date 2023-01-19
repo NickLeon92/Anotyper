@@ -77,6 +77,12 @@ p {
   visibility: visible;
 }
 
+.status{
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
