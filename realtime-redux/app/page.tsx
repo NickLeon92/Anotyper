@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { io } from "socket.io-client";
 
 // const socket = io("http://localhost:3001")
-const socket = io("https://socket-server-v2.fly.dev/")
+const socket = io("https://next-js-production.up.railway.app/")
 
 import { v4 as uuidv4 } from 'uuid';
 
