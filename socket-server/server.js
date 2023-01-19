@@ -54,15 +54,17 @@ io.on("connection", (socket) => {
   socket.on("return_status", async ({username, room}) => {
     console.log(`user's displayed room: ${room}`)
     console.log(`user's displayed name: ${username}`)
-    if(room !== ''){
-      if(room[0]+room[1] !== 'PR'){
-        console.log(`Connected user no longer available. Disconnecting socket: ${socket.id} from room: ${room}`)
-        io.to(socket.id).emit("room_destroy", "you disconnected there..")
-      }
-      else{
-        console.log(`joining socket: ${socket.id} to room: ${room}`)
-        socket.join(room)
-        socket.to(room).emit("wave", username)
+    if(room){
+      if(room !== ''){
+        if(room[0]+room[1] !== 'PR'){
+          console.log(`Connected user no longer available. Disconnecting socket: ${socket.id} from room: ${room}`)
+          io.to(socket.id).emit("room_destroy", "you disconnected there..")
+        }
+        else{
+          console.log(`joining socket: ${socket.id} to room: ${room}`)
+          socket.join(room)
+          socket.to(room).emit("wave", username)
+        }
       }
     }
   })
