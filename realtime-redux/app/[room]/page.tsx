@@ -230,8 +230,8 @@ function Home({params}:any){
                     </Button>
                 </Link>
                 <Button variant="primary" onClick={handleShow} style={{marginLeft:'10px'}}>
-        profile
-      </Button>
+                profile
+                </Button>
                 <Button style={{marginLeft:'10px'}} onClick={clipboard} className={button} type="button" id="button" title="Copy link">
                 <div className="content">
                     <div className="copy">

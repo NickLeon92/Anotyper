@@ -2,7 +2,7 @@
 
 import test from "node:test";
 import React, { useEffect, useState, useRef } from "react";
-import {Form, InputGroup, FormControl, Button, Container, FormLabel, ToastContainer} from 'react-bootstrap'
+import {Form, InputGroup, FormControl, Button, Container, FormLabel, ToastContainer, Modal} from 'react-bootstrap'
 import Toast from 'react-bootstrap/Toast';
 import Link from 'next/link'
 
@@ -33,6 +33,13 @@ function Home(){
     const [show, setShow] = useState(false);
     const nameRef = React.useRef<string>(id)
     const roomRef = React.useRef<string>(roomId)
+    const [button2, setButton2] = useState('button2')
+    const [show2, setShow2] = useState(false);
+    const htmlRef = React.useRef<HTMLTextAreaElement>(null)
+
+
+    const handleClose = () => setShow2(false);
+    const handleShow = () => setShow2(true);
 
     //callback for success/err functions for geolocation attempt (done automatically)
     const success = (data: { coords: { latitude: any; longitude: any; }; }) => {
@@ -88,15 +95,16 @@ function Home(){
         const privateRoom = `PR-${uuidv4()}`
         roomRef.current = privateRoom
         navigator.clipboard.writeText('https://realtime-redux-nickleon92.vercel.app/' + privateRoom);
-        setRoomId(privateRoom)
+        // setRoomId(privateRoom)
         // socket.emit("create_private_room", {privateRoom,username})
-        location.assign(`/${privateRoom}`)
+        // location.assign(`/${privateRoom}`)
     }
 
     //enter key event listener to send message
     const enterKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
         console.log(e.key)
         if(e.key === 'Enter'){
+            e.preventDefault()
             setMessage('')
             socket.emit("send_message", {message: '', partner: roomId})
         }
@@ -112,6 +120,13 @@ function Home(){
         e.preventDefault()
         nameRef.current = e.target.value
         setUsername(e.target.value)
+    }
+    const sendUserName = () => {
+        setButton2('button2 animateb')
+        setTimeout(()=>{
+            setButton2('button2')
+        },2000)
+        socket.emit("new_username", {room:roomRef.current , username:nameRef.current})
     }
 
     useEffect(() => {
@@ -141,7 +156,7 @@ function Home(){
             socket.emit("leave_rooms")
             setRoomId('')
             setRoomStatus(err)
-            setConnectedUser('no user connected')
+            setConnectedUser(err)
             setFoundUser(false)
         })
         socket.on("connected_users",(data) => {
@@ -166,8 +181,12 @@ function Home(){
             socket.emit("greet_invitee", {username: me, room:room})
         })
         socket.on("query_status", () => {
-            console.log('relaying status')
-            socket.emit("ping_status", roomRef.current)
+            console.log('relaying status: ' + roomRef.current)
+            socket.emit("return_status", roomRef.current)
+        })
+        socket.on("update_username", (name) => {
+            setConnectedUser(name)
+            setFoundUser(true)
         })
         // console.log(inbox)
     },[socket])
@@ -176,25 +195,76 @@ function Home(){
     useEffect(() => {
         navigator.geolocation.getCurrentPosition(success, error)
     },[])
+    useEffect(() => {
+        htmlRef.current?.scrollIntoView({block:'end'})
+    }, [inbox])
 
 
     return (
         <div>
           <Container style={{marginTop:'30px'}}>
-            <Form>
-                <Form.Group className="mb-3" controlId="formBasicEmail">
-                    <Form.Label>your username:</Form.Label>
-                    <FormControl 
-                        type="text" 
-                        placeholder={id}
-                        onChange={updateUserName}
-                    />
-                    <Form.Text className="text-muted">
-                        enter any username :)
-                    </Form.Text>
-                </Form.Group>
-            </Form>
-            <p>Room ID: {roomId === ''?roomStatus:roomId}</p>
+            <>
+        <Modal show={show2} onHide={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title style={{color:'#708ebc'}}>change my username</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <InputGroup className="mb-3">
+                <FormControl
+                    onChange={updateUserName}
+                    placeholder={nameRef.current}
+                    aria-label="message"
+                    aria-describedby="basic-addon2"
+                // onKeyDown={enterKey}
+                />
+                <Button
+                className={button2}
+                type='button'
+                    onClick={sendUserName}
+                    variant="outline-secondary" id="button-addon2">
+                        <div className="contentb">
+                            <div className="copy2b">
+                                
+                                <div>
+                                    set username
+                                </div>
+                            </div>
+                            <div className="copiedb">set!</div>
+                        </div>
+                </Button>
+            </InputGroup>
+
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+        </Modal>
+    </>
+    <InputGroup style={{marginBottom:'10px', height:'90px'}}>
+                <InputGroup.Text>inbox</InputGroup.Text>
+                <Form.Control ref={htmlRef} as="textarea" value={inbox} aria-label="With textarea" disabled />
+            </InputGroup>
+            <InputGroup className="mb-3">
+                <FormControl
+                    // onChange={}
+                    style={{height:'90px'}}
+                    as="textarea"
+                    placeholder="Type your message here"
+                    aria-label="message"
+                    aria-describedby="basic-addon2"
+                    value={message}
+                    onChange={updateMessage}
+                    onKeyDown={enterKey}
+                // onKeyDown={enterKey}
+                />
+                <Button
+                    onClick={clearMessage}
+                    variant="outline-secondary" id="button-addon2">
+                    return
+                </Button>
+            </InputGroup>
             <p style={foundUser ?{color: 'green'}:{color:'red'}}>
                 connected username: {connectedUser}
             </p>
@@ -202,35 +272,20 @@ function Home(){
                 <Button 
                 style={{marginBottom:'20px'}}
                 onClick={findRoom}
-                >find random chatter
+                >find chatter
                 </Button>
                 <Link href={`/${privateRoom}`}>
-                <Button 
-                style={{marginBottom:'20px', marginLeft:'20px'}}
-                // onClick={createPrivateRoom}
-                >create private room
-                </Button>
+                    <Button 
+                    style={{marginBottom:'20px', marginLeft:'10px'}}
+                    onClick={createPrivateRoom}
+                    >DM Room
+                    </Button>
                 </Link>
+                <Button variant="primary" onClick={handleShow} style={{marginLeft:'10px', marginBottom:'20px'}}>
+                profile
+                </Button>
             
                 
-                <InputGroup className="mb-3">
-                    <FormControl 
-                        type="text" 
-                        placeholder="Enter message" 
-                        value={message}
-                        onChange={updateMessage}
-                        onKeyDown={enterKey}
-                    />
-                </InputGroup>
-                <Button onClick={clearMessage}>clear textbox (Enter)</Button>
-                <div className="message-box" style={{marginTop:'10px'}}>
-                    <p className="message-header">inbox:</p>
-                    <p>{inbox}</p>
-                </div>
-                <div className="message-box">
-                    <p className="message-header">sent:</p>
-                    <p>{message}</p>
-                </div>
 
           </Container>
             
