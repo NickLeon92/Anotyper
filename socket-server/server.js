@@ -6,7 +6,7 @@ const cors = require('cors');
 
 const PORT = process.env.PORT || 3001
 
-
+console.log('test update')
 
 const app = express();
 app.use(cors({
