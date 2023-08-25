@@ -20,9 +20,9 @@ export default async function RootLayout({children}: {children: React.ReactNode}
     }
   }
 
-  const data = await getData()
+  //const data = await getData()
 
-  console.log(data)
+ // console.log(data)
 
 
   return (

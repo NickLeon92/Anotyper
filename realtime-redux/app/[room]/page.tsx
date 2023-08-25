@@ -9,18 +9,23 @@ import Link from 'next/link'
 
 
 // const socket = io("http://localhost:3001")
-const socket = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
+//const socket = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
 
 import { v4 as uuidv4 } from 'uuid';
+import { setConfig } from "next/config";
 
 const id = uuidv4()
 console.log('user id: ' + id)
+
 
 
 function Home({params}:any){
     
     let testRoomId = {}
 
+    const socket = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
+    // const[socket , setSocket] = useState(new WebSocket("wss://localhost:3000"))
+    const [mySocket, setMySocket] = useState('you are offline')
     const [loading, setLoading] = useState(true)
     const [roomExists, setRoomExists] = useState(true)
     const [roomId, setRoomId] = useState(params.room)
@@ -45,21 +50,21 @@ function Home({params}:any){
 
     //clears outgoing message
 
-    const sendStatus = (status : string) => {
+    const sendStatus = (socket : WebSocket) => {
         console.log('sending socket status to aws')
-        socket.send(JSON.stringify({action: "update_room", data: {room: roomId, status: status}}))
+       socket.send(JSON.stringify({action: "update_room", data: {room: roomId}}))
     }
     const clearMessage = () => {
 
         //set out going to empty
         setMessage('')
         //send empty string to partner
-        socket.send(JSON.stringify({action: "message_sent", message: '', room: roomId}))
+       socket.send(JSON.stringify({action: "message_sent", message: '', toSocket: connectedUser}))
     }
 
     //function to call back-end matchmaker to find a match
     const goHome = () => {
-        socket.close()
+       socket.close()
     }
 
     //enter key event listener to send message
@@ -68,7 +73,8 @@ function Home({params}:any){
         if(e.key === 'Enter'){
             e.preventDefault()
             setMessage('')
-            socket.send(JSON.stringify({action: "message_sent", message: '', room: roomId}))
+            socket.send(JSON.stringify({action: "message_sent", message: '', toSocket: connectedUser}))
+            
         }
     }
 
@@ -76,7 +82,23 @@ function Home({params}:any){
     const updateMessage = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()
         setMessage(e.target.value)
-        socket.send(JSON.stringify({action: "message_sent", message: e.target.value, room: roomId}))
+
+        sendMessage()
+
+        function sendMessage(){
+            if(socket.readyState === 1){
+                socket.send(JSON.stringify({action: "message_sent", message: e.target.value, toSocket: connectedUser}))
+            }else{
+                console.log('wating for socket to open...')
+                setTimeout(() => sendMessage() , 100)
+            }
+        }
+        // if(socket.readyState === 1){
+        //     socket.send(JSON.stringify({action: "message_sent", message: e.target.value, toSocket: connectedUser}))
+        // }else{
+        //     console.log('socket not ready')
+        //     setTimeout(() => socket.send(JSON.stringify({action: "message_sent", message: e.target.value, toSocket: connectedUser})), 1000)
+        // }
     }
     const updateUserName = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()
@@ -88,7 +110,7 @@ function Home({params}:any){
         setTimeout(()=>{
             setButton2('button2')
         },2000)
-        socket.send(JSON.stringify({action: "new_username",room:roomRef.current , username:nameRef.current}))
+        // socket.send(JSON.stringify({action: "new_username",room:roomRef.current , username:nameRef.current}))
     }
 
     const clipboard = () => {
@@ -110,31 +132,36 @@ function Home({params}:any){
     }
 
     useEffect(() => {
-
-        socket.addEventListener('open', () => {
-            console.log('connection with aws established')
-            sendStatus('open')
-        })
-
-        socket.addEventListener('close', (data) => {
-            console.log('connection with aws closed')
-            sendStatus('closed')
-        })
-
-        socket.addEventListener('message', (data : any) => {
-            console.log('message data coming through??')
-            console.log(data)
-            const payload = JSON.parse(data.data)
-            switch(payload.action){
+        htmlRef.current?.scrollIntoView({block:'end'})
+    }, [inbox])
+    useEffect(() => {
+        //instaniate websocket connection here???
+        // const socket = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
+        
+        socket.onopen = function(e) {
+            console.log('socket on onopen'); 
+            sendStatus(socket)
+        };
+        socket.onmessage = function(event) {
+            console.log(JSON.parse(event.data));
+            const eventData = JSON.parse(event.data)
+            switch(eventData.action){
                 case "status" :
                     console.log('recieving room status')
-                    if(Object.keys(payload.data).length === 0){
+                    console.log(eventData.data.yourSocket)
+                    setMySocket(eventData.data.yourSocket)
+                    if(Object.keys(eventData.data).length === 0){
                         setRoomExists(false)
+                        
+                    }else if(eventData.data.partnerSocket){
+                        setFoundUser(true)
+                        setConnectedUser(eventData.data.partnerSocket)
                     }
                     break
 
                 case "incoming_message" :
                     console.log('incoming message')
+                    setInbox(eventData.message)
                     break
                     
                 case "update_username" : 
@@ -142,18 +169,19 @@ function Home({params}:any){
                     break
                 
                 case "user_left" : 
+                    setFoundUser(false)
                     console.log('chat partner has left the building')
+                    break
+
+                case "found_user" : 
+                    setFoundUser(true)
+                    setConnectedUser(eventData.partnerSocket)
+                    console.log('chat partner has appeared')
+
                     break
             }
             setLoading(false)
-        })
-       
-    },[socket])
-    useEffect(() => {
-        htmlRef.current?.scrollIntoView({block:'end'})
-    }, [inbox])
-    useEffect(() => {
-        //instaniate websocket connection here???
+        };
     },[])
     
   
@@ -165,6 +193,7 @@ function Home({params}:any){
             <div>
                 {roomExists ?  (     
                     <div>
+                        <p>my socketId: {mySocket}</p>
                         {/* {roomExists === 'searching'?(<div>true</div>):(<div>false</div>)} */}
                         <>
                 <Modal show={show} onHide={handleClose}>
@@ -234,7 +263,7 @@ function Home({params}:any){
                         <div className="status" style={foundUser ?{color: 'green'}:{color:'red'}}>
                             {foundUser
                             ?<p>user connected: {connectedUser}</p>
-                            :<p>{connectedUser}</p>}
+                            :<p>no one else here right now..</p>}
                         </div>
                         <div className="button-group">
                             <Link href={`/`}>
@@ -277,7 +306,14 @@ function Home({params}:any){
                         
                     </div>
                 ):
-                (<div> room does not exist :/</div>)
+                (<div> 
+                    room does not exist :/
+                    <Link href={'/'}>
+                        <Button>
+                            Go Home
+                        </Button>
+                    </Link>
+                </div>)
                 }
 
             </div>
