@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {Form, InputGroup, FormControl, Button, Container, FormLabel, FormText, Modal} from 'react-bootstrap'
-
+import axios from 'axios'
 import { io } from "socket.io-client";
 import Link from 'next/link'
 
@@ -63,8 +63,26 @@ function Home({params}:any){
     }
 
     //function to call back-end matchmaker to find a match
-    const goHome = () => {
+    const goHome = async () => {
+
+        const url = 'https://hy3e7zqkkyz34tcubr7w2gnsiy0kehsp.lambda-url.us-east-1.on.aws/'
+        
+        try {
+            const res = await axios({
+                method: 'post',
+                url: url,
+                data:{
+                    roomId: roomId
+                }
+            })
+
+            console.log(res)
+        } catch (error) {
+            console.log(error)
+        }
+
        socket.close()
+       location.assign(`/`)
     }
 
     //enter key event listener to send message
@@ -90,7 +108,7 @@ function Home({params}:any){
                 socket.send(JSON.stringify({action: "message_sent", message: e.target.value, toSocket: connectedUser}))
             }else{
                 console.log('wating for socket to open...')
-                setTimeout(() => sendMessage() , 100)
+                setTimeout(() => sendMessage() , 10)
             }
         }
         // if(socket.readyState === 1){
@@ -266,13 +284,13 @@ function Home({params}:any){
                             :<p>no one else here right now..</p>}
                         </div>
                         <div className="button-group">
-                            <Link href={`/`}>
+                            {/* <Link href={`/`}> */}
             
                                 <Button
                                     onClick={goHome}
                                 >leave room
                                 </Button>
-                            </Link>
+                            {/* </Link> */}
                             <Button variant="primary" onClick={handleShow} style={{marginLeft:'10px'}}>
                             profile
                             </Button>
