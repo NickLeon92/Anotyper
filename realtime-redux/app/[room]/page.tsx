@@ -226,7 +226,7 @@ function Home({params}:any){
     return (
         <div>
         {loading ? (
-            <div>loadingggg...</div>
+            <h3 style={{color:'white'}} id="inbox-text">loading...</h3>
         ):(
             <div>
                 {roomExists ?  (     
