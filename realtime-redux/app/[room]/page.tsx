@@ -351,8 +351,10 @@ function Home({params}:any){
                         
                     </div>
                 ):
-                (<div> 
-                    room does not exist :/
+                (<div style={{padding:'20px'}}> 
+                    <h3 style={{color:'white'}}>
+                        room does not exist :/
+                    </h3>
                     <Link href={'/'}>
                         <Button>
                             Go Home
