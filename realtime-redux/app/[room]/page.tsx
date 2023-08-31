@@ -23,8 +23,8 @@ function Home({params}:any){
     
     let testRoomId = {}
 
-    const socket = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
-    // const[socket , setSocket] = useState(new WebSocket("wss://localhost:3000"))
+    // const socket = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
+    const [socket, setSocket] = useState<WebSocket | null>(null);
     const [mySocket, setMySocket] = useState('you are offline')
     const [loading, setLoading] = useState(true)
     const [roomExists, setRoomExists] = useState(true)
@@ -50,16 +50,25 @@ function Home({params}:any){
 
     //clears outgoing message
 
-    const sendStatus = (socket : WebSocket) => {
+    const sendStatus = () => {
         console.log('sending socket status to aws')
-       socket.send(JSON.stringify({action: "update_room", data: {room: roomId}}))
+       
+        sendMessage()
+       function sendMessage(){
+            if(socket?.readyState === 1){
+                socket.send(JSON.stringify({action: "update_room", data: {room: roomId}}))
+            }else{
+                console.log('wating for socket to open...')
+                setTimeout(() => sendMessage() , 10)
+            }
+        }
     }
     const clearMessage = () => {
 
         //set out going to empty
         setMessage('')
         //send empty string to partner
-       socket.send(JSON.stringify({action: "message_sent", message: '', toSocket: connectedUser}))
+       socket?.send(JSON.stringify({action: "message_sent", message: '', toSocket: connectedUser}))
     }
 
     //function to call back-end matchmaker to find a match
@@ -81,7 +90,7 @@ function Home({params}:any){
             console.log(error)
         }
 
-       socket.close()
+       socket?.close()
        location.assign(`/`)
     }
 
@@ -91,7 +100,7 @@ function Home({params}:any){
         if(e.key === 'Enter'){
             e.preventDefault()
             setMessage('')
-            socket.send(JSON.stringify({action: "message_sent", message: '', toSocket: connectedUser}))
+            socket?.send(JSON.stringify({action: "message_sent", message: '', toSocket: connectedUser}))
             
         }
     }
@@ -104,7 +113,7 @@ function Home({params}:any){
         sendMessage()
 
         function sendMessage(){
-            if(socket.readyState === 1){
+            if(socket?.readyState === 1){
                 socket.send(JSON.stringify({action: "message_sent", message: e.target.value, toSocket: connectedUser}))
             }else{
                 console.log('wating for socket to open...')
@@ -155,12 +164,13 @@ function Home({params}:any){
     useEffect(() => {
         //instaniate websocket connection here???
         // const socket = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
-        
-        socket.onopen = function(e) {
+        const ws = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
+        setSocket(ws)
+        ws.onopen = function(e) {
             console.log('socket on onopen'); 
-            sendStatus(socket)
         };
-        socket.onmessage = function(event) {
+
+        ws.onmessage = function(event) {
             console.log(JSON.parse(event.data));
             const eventData = JSON.parse(event.data)
             switch(eventData.action){
@@ -200,8 +210,18 @@ function Home({params}:any){
             }
             setLoading(false)
         };
+        return () => {
+            ws.close();
+          };
     },[])
     
+    useEffect(() => {
+        console.log('change in socket detected')
+        console.log(socket)
+        if(socket){
+            sendStatus()
+        }
+    }, [socket])
   
     return (
         <div>

@@ -6,6 +6,11 @@ import {Form, InputGroup, FormControl, Button, Container, FormLabel, ToastContai
 import Toast from 'react-bootstrap/Toast';
 import Link from 'next/link'
 
+import { io } from "socket.io-client";
+
+// const socket = io("http://localhost:3001")
+const socket = io("https://next-js-production.up.railway.app/")
+
 import { v4 as uuidv4 } from 'uuid';
 
 const id = uuidv4()
@@ -13,13 +18,12 @@ console.log('user id: ' + id)
 
 function Home(){
 
-    // const socket = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
-
-    const [socket, setSocket] = useState<WebSocket | null>(null);
-
-
+    //name of joined room
     const [roomId, setRoomId] = useState('')
+    const [roomStatus, setRoomStatus] = useState('no room joined')
+    //saved location data
     const [locationData, setLocationData] = useState({})
+
     const [ready, setReady] = useState(false)
     const [connectedUser, setConnectedUser] = useState('no user connected')
     const [foundUser, setFoundUser] = useState(false)
@@ -32,6 +36,7 @@ function Home(){
     const [button2, setButton2] = useState('button2')
     const [show2, setShow2] = useState(false);
     const htmlRef = React.useRef<HTMLTextAreaElement>(null)
+
 
     const handleClose = () => setShow2(false);
     const handleShow = () => setShow2(true);
@@ -54,20 +59,6 @@ function Home(){
         window.alert(error)
     }
 
-    const sendStatus = async () => {
-
-        sendMessage()
-
-        function sendMessage(){
-            if(socket?.readyState === 1){
-                socket.send(JSON.stringify({action: "roulette_room_handler", data: 'none'}))
-            }else{
-                console.log('wating for socket to open...')
-                setTimeout(() => sendMessage() , 10)
-            }
-        }
-    }
-
 
     //clears outgoing message
     const clearMessage = () => {
@@ -75,9 +66,39 @@ function Home(){
         //set out going to empty
         setMessage('')
         //send empty string to partner
-        socket?.send(JSON.stringify({action: "message_sent", message: '', toSocket: connectedUser}))
+        socket.emit("send_message", {message: '', partner: roomId})
     }
 
+    //function to call back-end matchmaker to find a match
+    const findRoom = () => {
+        socket.emit('leave_rooms')
+        setInbox('')
+        setMessage('')
+        setFoundUser(false)
+        const payload = {...locationData, username:username}
+        if(ready){
+            socket.emit("join_room", payload)
+        }
+        else{
+            window.alert('you need to wait for location data to come back')
+        }
+    }
+    const privateRoom = `PR-${uuidv4()}`
+    const createPrivateRoom = () => {
+        // window.alert('link copied to clipboard')
+        socket.emit('leave_rooms')
+        setShow(true)
+        setInbox('')
+        setMessage('')
+        setFoundUser(false)
+        setConnectedUser('waitng for user to join..')
+        const privateRoom = `PR-${uuidv4()}`
+        roomRef.current = privateRoom
+        navigator.clipboard.writeText('https://realtime-redux-nickleon92.vercel.app/' + privateRoom);
+        // setRoomId(privateRoom)
+        // socket.emit("create_private_room", {privateRoom,username})
+        // location.assign(`/${privateRoom}`)
+    }
 
     //enter key event listener to send message
     const enterKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -85,7 +106,7 @@ function Home(){
         if(e.key === 'Enter'){
             e.preventDefault()
             setMessage('')
-            socket?.send(JSON.stringify({action: "message_sent", message: '', toSocket: connectedUser}))
+            socket.emit("send_message", {message: '', partner: roomId})
         }
     }
 
@@ -93,82 +114,87 @@ function Home(){
     const updateMessage = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()
         setMessage(e.target.value)
-        // socket.send(JSON.stringify({action: "message_sent", message: e.target.value, toSocket: connectedUser}))
-
-        sendMessage()
-
-        function sendMessage(){
-            if(socket?.readyState === 1){
-                socket.send(JSON.stringify({action: "message_sent", message: e.target.value, toSocket: connectedUser}))
-            }else{
-                console.log('wating for socket to open...')
-                setTimeout(() => sendMessage() , 10)
-            }
-        }
+        socket.emit("send_message", {message: e.target.value, partner: roomId})
     }
     const updateUserName = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()
         nameRef.current = e.target.value
         setUsername(e.target.value)
     }
-
-    const goHome = async () => {
-        socket?.close()
-        location.assign(`/`)
+    const sendUserName = () => {
+        setButton2('button2 animateb')
+        setTimeout(()=>{
+            setButton2('button2')
+        },2000)
+        socket.emit("new_username", {room:roomRef.current , username:nameRef.current})
     }
 
-
     useEffect(() => {
-        const ws = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
-        setSocket(ws)
-        ws.onopen = function(e) {
-            console.log('socket connection open'); 
-            // sendStatus()
-        };
-        ws.onmessage = function(event) {
-            console.log(JSON.parse(event.data));
-            const eventData = JSON.parse(event.data)
-            switch(eventData.action){
-                case "status" :
-                    console.log('recieving room status')
-                    setFoundUser(true)
-                    setConnectedUser(eventData.partnerSocket)
-                case "incoming_message" :
-                    console.log('incoming message')
-                    setInbox(eventData.message)
-                    break
-                case "found_user" :
-                    console.log('partner has been found')
-                    setFoundUser(true)
-                    setConnectedUser(eventData.partnerSocket)
-                    break
-                case "user_left" :
-                    console.log('partner has been found')
-                    setFoundUser(false)
-                    setConnectedUser('partner has left')
-                    break
-                case "incoming_message" :
-                    console.log('incoming message')
-                    setInbox(eventData.message)
-                    break           
+        console.log(`welcome ${username}`)
+        // console.log('message recieved')
+        socket.on("incoming_message", (data) => {
+            // findRoom()
+            setInbox(data)
+        })
+        socket.on("chat_room_id", (data) => {
+            console.log("room id from server:")
+            console.log(data)
+            setRoomId(data)
+            roomRef.current = data
+        })
+        socket.on("test", (data)=>{
+            console.log(data)
+        })
+        socket.on("test_message", (data) => {
+            setInbox(data)
+        })
+        socket.on("room_destroy", (err) => {
+            console.log(locationData)
+            console.log(err)
+            setMessage('')
+            setInbox('')
+            socket.emit("leave_rooms")
+            setRoomId('')
+            setRoomStatus(err)
+            setConnectedUser(err)
+            setFoundUser(false)
+        })
+        socket.on("connected_users",(data) => {
+            console.log(data)
+            setConnectedUser('looking for someone to chat with..')
+            for(let user in data){
+                console.log(`is ${user} equal to ${id}`)
+                if(user !== id){
+                    
+                    setConnectedUser(data[user])
+                }
             }
-        };
-        return () => {
-            ws.close();
-          };
-    },[])
+            if(Object.keys(data).length > 1){
+                setFoundUser(true)
+            }
+        })
+        socket.on("invitee_connected", (data) => {
+            let me = nameRef.current
+            let room = roomRef.current
+            setConnectedUser(data)
+            setFoundUser(true)
+            socket.emit("greet_invitee", {username: me, room:room})
+        })
+        socket.on("query_status", () => {
+            console.log('relaying status: ' + roomRef.current)
+            socket.emit("return_status", roomRef.current)
+        })
+        socket.on("update_username", (name) => {
+            setConnectedUser(name)
+            setFoundUser(true)
+        })
+        // console.log(inbox)
+    },[socket])
     
-    useEffect(() => {
-        console.log('change in socket detected')
-        console.log(socket)
-        if(socket){
-            sendStatus()
-        }
-    }, [socket])
 
-    // useEffect(() => {
-    //     navigator.geolocation.getCurrentPosition(success, error)
-    // },[])
+    useEffect(() => {
+        navigator.geolocation.getCurrentPosition(success, error)
+    },[])
     useEffect(() => {
         htmlRef.current?.scrollIntoView({block:'end'})
     }, [inbox])
@@ -194,7 +220,7 @@ function Home(){
                 <Button
                 className={button2}
                 type='button'
-                    // onClick={sendUserName}
+                    onClick={sendUserName}
                     variant="outline-secondary" id="button-addon2">
                         <div className="contentb">
                             <div className="copy2b">
@@ -216,16 +242,9 @@ function Home(){
         </Modal.Footer>
         </Modal>
     </>
-    <InputGroup  style={{marginBottom:'10px', height:'90px'}}>
-                {/* <InputGroup.Text>inbox</InputGroup.Text> */}
-                <div id="inboxDiv">
-                    <p style={{margin:'10px', padding:'10px', borderRight:'solid'}}>inbox: </p>
-                    {/* <div style={{border:'solid'}}></div> */}
-                    <p  id="inbox-text">
-                      {inbox}
-                    </p>
-                </div>
-                {/* <Form.Control ref={htmlRef} as="textarea" value={inbox} aria-label="With textarea" disabled /> */}
+    <InputGroup style={{marginBottom:'10px', height:'90px'}}>
+                <InputGroup.Text>inbox</InputGroup.Text>
+                <Form.Control ref={htmlRef} as="textarea" value={inbox} aria-label="With textarea" disabled />
             </InputGroup>
             <InputGroup className="mb-3">
                 <FormControl
@@ -249,19 +268,19 @@ function Home(){
             <p style={foundUser ?{color: 'green'}:{color:'red'}}>
                 connected username: {connectedUser}
             </p>
-           
-
+            
                 <Button 
                 style={{marginBottom:'20px'}}
-                onClick={goHome}
-                >Go Home
-                </Button> 
-
-                <Button 
-                style={{marginBottom:'20px'}}
-                >find new chatter
+                onClick={findRoom}
+                >find chatter
                 </Button>
-       
+                <Link href={`/${privateRoom}`}>
+                    <Button 
+                    style={{marginBottom:'20px', marginLeft:'10px'}}
+                    onClick={createPrivateRoom}
+                    >DM Room
+                    </Button>
+                </Link>
                 <Button variant="primary" onClick={handleShow} style={{marginLeft:'10px', marginBottom:'20px'}}>
                 profile
                 </Button>

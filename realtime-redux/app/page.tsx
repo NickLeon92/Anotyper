@@ -64,6 +64,7 @@ function Home(){
         location.assign(`/${roomId}`)
     }
 
+
     //enter key event listener to send message
 
     useEffect(() => {
@@ -103,11 +104,13 @@ function Home(){
                 </>
 
 
+                <Link href={'/roulette'}>
+                    <Button
+                        style={{ marginBottom: '20px' }}
+                    >find chatter
+                    </Button>
+                </Link>
 
-                <Button
-                    style={{ marginBottom: '20px' }}
-                >find chatter
-                </Button>
                 {/* <Link href={`/${roomId}`}> */}
                     <Button
                         style={{ marginBottom: '20px', marginLeft: '10px' }}
