@@ -122,9 +122,9 @@ function Home(){
                 <Button variant="primary" onClick={handleShow} style={{ marginLeft: '10px', marginBottom: '20px' }}>
                     profile
                 </Button>
-                <p>
+                {/* <p>
                     {roomId}
-                </p>
+                </p> */}
 
 
 
