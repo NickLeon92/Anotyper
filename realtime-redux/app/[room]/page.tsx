@@ -280,7 +280,7 @@ function Home({params}:any){
                             {/* <Form.Control ref={htmlRef} as="textarea" value={inbox} aria-label="With textarea" disabled /> */}
                             <div id="inboxDiv">
                     <p style={{margin:'10px', padding:'10px', borderRight:'solid'}}>inbox: </p>
-                    {/* <div style={{border:'solid'}}></div> */}
+           
                     <p  id="inbox-text">
                       {inbox}
                     </p>
