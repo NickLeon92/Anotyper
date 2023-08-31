@@ -231,7 +231,7 @@ function Home({params}:any){
             <div>
                 {roomExists ?  (     
                     <div>
-                        <p>my socketId: {mySocket}</p>
+                        {/* <p>my socketId: {mySocket}</p> */}
                         {/* {roomExists === 'searching'?(<div>true</div>):(<div>false</div>)} */}
                         <>
                 <Modal show={show} onHide={handleClose}>
@@ -276,8 +276,15 @@ function Home({params}:any){
                         
                         
                         <InputGroup style={{marginBottom:'10px', height:'90px'}}>
-                            <InputGroup.Text>inbox</InputGroup.Text>
-                            <Form.Control ref={htmlRef} as="textarea" value={inbox} aria-label="With textarea" disabled />
+                            {/* <InputGroup.Text>inbox</InputGroup.Text> */}
+                            {/* <Form.Control ref={htmlRef} as="textarea" value={inbox} aria-label="With textarea" disabled /> */}
+                            <div id="inboxDiv">
+                    <p style={{margin:'10px', padding:'10px', borderRight:'solid'}}>inbox: </p>
+                    {/* <div style={{border:'solid'}}></div> */}
+                    <p  id="inbox-text">
+                      {inbox}
+                    </p>
+                </div>
                         </InputGroup>
                         <InputGroup className="mb-3">
                             <FormControl
