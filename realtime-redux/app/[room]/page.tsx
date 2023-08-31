@@ -281,7 +281,7 @@ function Home({params}:any){
                             <div id="inboxDiv">
                     <p style={{margin:'10px', padding:'10px', borderRight:'solid'}}>inbox: </p>
            
-                    <p  id="inbox-text">
+                    <p style={{margin:'10px', padding:'10px'}} id="inbox-text">
                       {inbox}
                     </p>
                 </div>
