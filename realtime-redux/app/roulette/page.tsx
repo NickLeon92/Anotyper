@@ -21,7 +21,7 @@ function Home(){
     const [roomId, setRoomId] = useState('')
     const [locationData, setLocationData] = useState({})
     const [ready, setReady] = useState(false)
-    const [connectedUser, setConnectedUser] = useState('no user connected')
+    const [connectedUser, setConnectedUser] = useState('looking for chatter..')
     const [foundUser, setFoundUser] = useState(false)
     const [username, setUsername] = useState(id)
     const [message, setMessage] = useState('')
@@ -60,7 +60,7 @@ function Home(){
 
         function sendMessage(){
             if(socket?.readyState === 1){
-                socket.send(JSON.stringify({action: "roulette_room_handler", data: 'none'}))
+                socket.send(JSON.stringify({action: "roulette_room_handler", type: 'new'}))
             }else{
                 console.log('wating for socket to open...')
                 setTimeout(() => sendMessage() , 10)
@@ -117,6 +117,12 @@ function Home(){
         location.assign(`/`)
     }
 
+    async function newChatter() {
+        setFoundUser(false)
+        setConnectedUser('looking for new chatter..')
+        socket?.send(JSON.stringify({action: "roulette_room_handler", type: 'reroll', oldSocket: connectedUser}))
+    }
+
 
     useEffect(() => {
         const ws = new WebSocket('wss://byez0nz5ij.execute-api.us-east-1.amazonaws.com/production/')
@@ -145,7 +151,7 @@ function Home(){
                 case "user_left" :
                     console.log('partner has been found')
                     setFoundUser(false)
-                    setConnectedUser('partner has left')
+                    setConnectedUser('looking for new chatter..')
                     break
                 case "incoming_message" :
                     console.log('incoming message')
@@ -221,7 +227,7 @@ function Home(){
                 <div id="inboxDiv">
                     <p style={{margin:'10px', padding:'10px', borderRight:'solid'}}>inbox: </p>
                     {/* <div style={{border:'solid'}}></div> */}
-                    <p style={{margin:'10px', padding:'10px'}} id="inbox-text">
+                    <p style={{margin:'10px', padding:'10px'}} id={foundUser ?'inbox-text':'noneee'}>
                       {inbox}
                     </p>
                 </div>
@@ -246,8 +252,8 @@ function Home(){
                     return
                 </Button>
             </InputGroup>
-            <p style={foundUser ?{color: 'green'}:{color:'red'}}>
-                connected username: {connectedUser}
+            <p id={foundUser ?'noneee':'inbox-text'} style={foundUser ?{color: 'green'}:{color:'red'}}>
+                connected user: {connectedUser}
             </p>
            
 
@@ -259,6 +265,7 @@ function Home(){
 
                 <Button 
                 style={{marginBottom:'20px'}}
+                onClick={newChatter}
                 >find new chatter
                 </Button>
        
