@@ -34,6 +34,13 @@ function Home(){
     const handleClose = () => setShow2(false);
     const handleShow = () => setShow2(true);
 
+    const clientId = '1149605835580915752';
+    const redirectUri = 'http://localhost:3000/auth';
+    const scope = 'identify';
+
+    async function handleLogin() {
+        window.location.href = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`
+    }
 
     const updateUserName = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()
@@ -96,6 +103,9 @@ function Home(){
 
                         </Modal.Body>
                         <Modal.Footer>
+                        <Button variant="secondary" onClick={handleLogin}>
+                                login
+                            </Button>
                             <Button variant="secondary" onClick={handleClose}>
                                 Close
                             </Button>
