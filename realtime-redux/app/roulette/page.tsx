@@ -17,7 +17,6 @@ function Home(){
 
     const [socket, setSocket] = useState<WebSocket | null>(null);
 
-
     const [roomId, setRoomId] = useState('')
     const [locationData, setLocationData] = useState({})
     const [ready, setReady] = useState(false)
@@ -120,7 +119,9 @@ function Home(){
     async function newChatter() {
         setFoundUser(false)
         setConnectedUser('looking for new chatter..')
-        socket?.send(JSON.stringify({action: "roulette_room_handler", type: 'reroll', oldSocket: connectedUser}))
+        if(connectedUser !== 'looking for new chatter..'){
+            socket?.send(JSON.stringify({action: "roulette_room_handler", type: 'reroll', oldSocket: connectedUser}))
+        }
     }
 
 
