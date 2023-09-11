@@ -35,7 +35,7 @@ function Home(){
     const handleShow = () => setShow2(true);
 
     const clientId = '1149605835580915752';
-    const redirectUri = 'http://localhost:3000/auth';
+    const redirectUri = 'https://www.anotype.app/auth';
     const scope = 'identify';
 
     async function handleLogin() {
