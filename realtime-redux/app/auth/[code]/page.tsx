@@ -65,7 +65,7 @@ useEffect(() => {
     }
   };
 
-   getCode();
+   //getCode();
 },[])
 
     return (
