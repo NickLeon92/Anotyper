@@ -41,6 +41,7 @@ useEffect(() => {
 
         // Set the cookie with a name, value, and optional options (like expiration date)
         document.cookie = `access_token=${accessToken}; expires=Thu, 01 Jan 2024 00:00:00 UTC; path=/`;
+        localStorage.setItem('key', accessToken)
 
 
         // Redirect to the desired page after successful login
@@ -52,7 +53,7 @@ useEffect(() => {
     }
   };
 
-  getCode();
+   getCode();
 },[])
 
     return (
