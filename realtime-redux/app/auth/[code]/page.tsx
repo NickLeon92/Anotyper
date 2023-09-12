@@ -24,16 +24,28 @@ useEffect(() => {
 
     if (code) {
       try {
-        const response = await axios.post('https://discord.com/api/oauth2/token', null, {
-          params: {
-            client_id: clientId,
-            client_secret: clientSecret,
-            grant_type: 'authorization_code',
-            code: code,
-            redirect_uri: 'https://www.anotype.app/auth',
-            scope: 'identify', // Adjust scopes based on your app's requirements
-          },
-        });
+        // const response = await axios.post('https://discord.com/api/oauth2/token', null, {
+        //   params: {
+        //     client_id: clientId,
+        //     client_secret: clientSecret,
+        //     grant_type: 'authorization_code',
+        //     code: code,
+        //     redirect_uri: 'https://www.anotype.app/auth',
+        //     scope: 'identify', // Adjust scopes based on your app's requirements
+        //   },
+        // });
+        const response = await axios({
+            method: 'post',
+            url: 'https://discord.com/api/oauth2/token',
+            data: {
+                client_id: clientId,
+                client_secret: clientSecret,
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: 'https://www.anotype.app/auth',
+                scope: 'identify', // Adjust scopes based on your app's requirements
+            }
+        })
 
         const accessToken = response.data.access_token;
         // Save the accessToken in your app's state or local storage for future use
