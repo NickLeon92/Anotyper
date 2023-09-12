@@ -46,7 +46,7 @@ useEffect(() => {
                 client_secret: clientSecret,
                 grant_type: 'authorization_code',
                 code: code,
-               // redirect_uri: 'https://www.anotype.app/auth',
+               redirect_uri: 'https://www.anotype.app/auth',
                 scope: 'identify', // Adjust scopes based on your app's requirements
             }
         })
@@ -69,7 +69,7 @@ useEffect(() => {
     }
   };
 
-   //getCode();
+   getCode();
 },[])
 
     return (
