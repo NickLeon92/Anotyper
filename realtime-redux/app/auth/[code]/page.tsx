@@ -3,18 +3,22 @@
 import React, { useEffect, useState, useRef } from "react";
 import {Form, InputGroup, FormControl, Button, Container, FormLabel, ToastContainer, Modal} from 'react-bootstrap'
 import axios from "axios";
-
+import { useRouter } from 'next/router';
 
 import { v4 as uuidv4 } from 'uuid';
 
 
 function Home({params} : any ){
-
+    const router = useRouter();
+    const { query } = router;
+  
+    // Access query parameters here
+    const param1 = query.param1;
    
 useEffect(() => {
   const getCode = async () => {
 
-    const code = params.code
+    const code = param1
 
     const clientId = '1149605835580915752'
     const clientSecret = 'pR1mdlbvlOlKIIQuha-btwMAbxehnx-O'
