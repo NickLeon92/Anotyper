@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import {Form, InputGroup, FormControl, Button, Container, FormLabel, ToastContainer, Modal} from 'react-bootstrap'
 import axios from "axios";
-
+import Link from 'next/link'
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -47,10 +47,11 @@ function Home(){
 
     return (
         <div>
-          <Button
-          >
-            click me to go home
-          </Button>
+          <Link href={'/'}>
+                        <Button>
+                            Go Home
+                        </Button>
+                    </Link>
           <Button
           onClick={logToken}
           >

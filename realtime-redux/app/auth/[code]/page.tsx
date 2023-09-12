@@ -69,7 +69,7 @@ useEffect(() => {
 },[])
 
     return (
-        <div id="inbox-text">
+        <div style={{color: 'white'}} id="inbox-text">
          logging in .. 
         </div>
         )
