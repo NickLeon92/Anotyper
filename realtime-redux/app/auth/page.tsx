@@ -4,9 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import {Form, InputGroup, FormControl, Button, Container, FormLabel, ToastContainer, Modal} from 'react-bootstrap'
 import axios from "axios";
 import Link from 'next/link'
-import { useRouter } from 'next/router';
-
-
+import { useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid';
 
 const id = uuidv4()
@@ -14,15 +12,11 @@ console.log('user id: ' + id)
 
 function Home(){
 
-  const router = useRouter();
-    const { query } = router;
+  const search = useSearchParams()
+  const code = search.get('code')
   
-    // Access query parameters here
-    const param1 = query.param1;
-
     async function logToken() {
       
-
       const cookies = document.cookie.split(';');
 
       console.log('looking for cookie with name access_token')
@@ -47,22 +41,13 @@ function Home(){
 
     }
 
-    async function createToken(){
-      document.cookie = `access_token=test_cookie; expires=Thu, 01 Jan 2024 00:00:00 UTC; path=/`
-      localStorage.setItem('key', 'abc')
-    }
 
     useEffect(() => {
       const getCode = async () => {
-    
-        const code = param1
-    
+        
         const clientId = '1149605835580915752'
         const clientSecret = 'pR1mdlbvlOlKIIQuha-btwMAbxehnx-O'
-    
-        console.log('getting code')
-        console.log(code)
-    
+
         if (code) {
           try {
             // const response = await axios.post('https://discord.com/api/oauth2/token', null, {
@@ -121,11 +106,6 @@ function Home(){
           onClick={logToken}
           >
             log token
-          </Button>
-          <Button
-          onClick={createToken}
-          >
-            create test token
           </Button>
         </div>
         )
